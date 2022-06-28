@@ -1,0 +1,20 @@
+---
+title: "Stats Notes"
+author: "Carter Burtlake"
+date: "14/11/2021"
+output: html_document
+---
+
+There is a bit of a hierarchical approach to how we advance in our statistics selection. The tests we’ve covered so far are t-tests and ANOVA (parametric and nonparametric), linear models (lm), generalized linear models (glm), generalized additive models (gam), and generalized additive models for location, scale, and shape (gamlss).
+The entire motivation behind statistical models is understanding how much variance in your response variable is explained by a number of variables associated with your experiment. In the same way that a t-test compares means between two groups, ANOVA compares the means between more than two groups. However, ANOVA actually compares the variance between groups and extrapolates to comparisons of means. ANOVA is a special case of a linear model, in the sense that ANOVA can only handle categorical explanatory variables (e.g., differences between discrete groups). Linear models are more flexible than ANOVA because you can mix categorical and continuous explanatory variables in your model formula. For our intents and purposes, without going into the weeds of the math and parameters that underpin each model, we can think about them like this:
+a t-test is response ~ group for only two groups (gives an overall p-value for the single comparison)
+an ANOVA is response ~ group + randomEffect for more than two groups with categorical variables (give one p-value per comparison)
+there are many types of ANOVA, like repeated measures, or random effects, etc.
+a linear model is response ~ explanatoryVar + explanatoryVar + randomEffect for any mix of categorical and continuous variables (gives p-values per term or interaction)
+a linear model assumes a normal distribution of the response variable
+a generalized linear model is response ~ explanatoryVar + explanatoryVar + randomEffect for any mix of categorical and continuous variables (gives p-values per term or interaction)
+glm supports binomial, normal, Gamma, inverse normal, Poisson, quasi, quasibinomial, and quasipoisson distributions of the response variable
+a generalized additive model is response ~ explanatoryVar + explanatoryVar + randomEffect for any mix of categorical and continuous variables (gives p-values per term or interaction)
+gam supports ordered categorical, Tweedie, negative binomial, beta, heavy-tailed skew, zero inflated Poisson, Cox proportional hazards, gammaLS, normalLS, GEVLS, Gumbel LS, Sinh-arcsinh LS, two-stage zero inflated Poisson, multivariate normal additive, and multinormal logistic regression for the response variable
+a generalized additive model for location, scale, and shape is `response ~ explanatoryVar + explanatoryVar + randomEffect` for any mix of categorical and continuous variables (gives p-values per term or interaction)
+gamlss supports all the distributions listed here https://www.rdocumentation.org/packages/gamlss.dist/versions/5.3-2/topics/gamlss.family

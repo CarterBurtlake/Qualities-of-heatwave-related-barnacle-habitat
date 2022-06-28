@@ -1,0 +1,235 @@
+---
+title: "BamfieldDSProject2021"
+author: "Carter Burtlake and Jules Jones"
+date: "25/11/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, tidy=TRUE, tidy.opts = list(width.cutoff = 70))
+```
+
+```{r message=FALSE, warning=FALSE}
+library(readxl)
+library(ggpubr)
+library(ggplot2)
+library(dplyr)
+library(performance) 
+library(agridat)
+library(scales)
+library(viridis)
+library(plotrix)
+library(tidyverse)
+library(fitdistrplus)
+library(LambertW)
+library(gamlss)
+library(FSA)
+library(formatR)
+```
+
+# Read In
+```{r}
+DSData <- read.csv("LittorinaAbundanceData_DS2021.csv")
+```
+
+_______________________________________________________________________________________________________
+
+
+```{r message=FALSE, warning=FALSE}
+##########################
+###Distribution fitting###
+##########################
+
+test_no_percent_cover <- DSData %>%
+  dplyr::select(-notes)%>%
+  dplyr::select(-percent_cover_barnacles)%>%
+  na.omit() %>%
+  mutate(wave_exposure = as.factor(wave_exposure),
+         treatment = fct_relevel(treatment, "Control", "Mass_Mortality", "Cleared"))
+#filter out unnecessary data for tests, change factor level of wave_exposure data, and remove NA's to allow functions to run below
+
+#checking assumptions
+qqnorm(DSData$total)
+qqline(DSData$total)
+#visualizing normality: looks non-normal
+shapiro.test(DSData$total)
+#p= 1.341e-09, the distribution is significantly different from a normal distribution
+
+descdist(test_no_percent_cover$total) 
+
+fitDist(total, data = test_no_percent_cover, type = "counts", try.gamlss = T)
+#Suggests distribution is best fit to Geometric family
+
+total_geom <- histDist(test_no_percent_cover$total, "GEOM", density = T, main = "GEOM")
+total_NBF <- histDist(test_no_percent_cover$total, "NBF", density = T, main = "NegBin")
+total_dpoi <- histDist(test_no_percent_cover$total, "DPO", density = T, main = "DPoisson")
+#All seem to fit the distribution well
+
+GAIC(total_geom, total_NBF, total_dpoi)
+#Lowest AIC is Geometric (1384.976)
+```
+
+```{r message=FALSE, warning=FALSE, results='hide'}
+##############################
+###Models without summaries###
+#############################
+
+
+Geometric.full.mod <- gamlss(total ~ treatment + survey + treatment*survey + random(as.factor(site)), family = GEOM(), data = test_no_percent_cover, control = gamlss.control(n.cyc = 100))
+step.test_no_percent_cover_geom <- stepGAIC(Geometric.full.mod, direction = "backward", trace = F)
+formula(Geometric.full.mod) # get the final formula
+step.test_no_percent_cover_geom$anova 
+# look at the terms as they were taken out in a step-wise fashion
+
+DoublePoisson.full.mod <- gamlss(total ~ treatment + survey + treatment*survey + random(as.factor(site)), family = DPO(), data = test_no_percent_cover, control = gamlss.control(n.cyc = 100))
+step.test_no_percent_cover_DP <- stepGAIC(DoublePoisson.full.mod, direction = "backward", trace = F)
+formula(DoublePoisson.full.mod) # get the final formula
+step.test_no_percent_cover_DP$anova
+# look at the terms as they were taken out in a step-wise fashion
+
+NegativeBinomial.full.mod <- gamlss(total ~ treatment + survey + treatment*survey + random(as.factor(site)), family = NBF(), data = test_no_percent_cover, control = gamlss.control(n.cyc = 100))
+step.test_no_percent_cover_NBF <- stepGAIC(NegativeBinomial.full.mod, direction = "backward", trace = F)
+formula(NegativeBinomial.full.mod) # get the final formula
+step.test_no_percent_cover_NBF$anova
+# look at the terms as they were taken out in a step-wise fashion
+
+#Wave exposure final model
+NegativeBinomial.wave_exposure.mod <- gamlss(total ~ treatment*survey*wave_exposure + random(as.factor(site)), family = NBF(), data = test_no_percent_cover, control = gamlss.control(n.cyc = 200))
+step.test_no_percent_cover_NBF2 <- stepGAIC(NegativeBinomial.wave_exposure.mod, direction = "backward", trace = F)
+formula(NegativeBinomial.wave_exposure.mod) # get the final formula
+step.test_no_percent_cover_NBF2$anova 
+# look at the terms as they were taken out in a step-wise fashion
+```
+
+```{r}
+###############################
+###Summaries of above Models###
+##############################
+
+summary(step.test_no_percent_cover_geom)# get a summary of final model above
+#Summary of Geometric distribution fit to gamlss model above
+
+summary(step.test_no_percent_cover_DP) # get a summary of final model above
+#Summary of Double Poisson distribution fit to gamlss model above
+
+summary(step.test_no_percent_cover_NBF) # get a summary of final model above
+#Summary of Negative Binomial distribution fit to gamlss model above (non-wave exposure version)
+
+#Check AIC values for all three models run above
+GAIC(NegativeBinomial.full.mod, DoublePoisson.full.mod, Geometric.full.mod)
+#Negative Binomial distribution has lowest AIC value for the models (1224.446)
+
+summary(step.test_no_percent_cover_NBF2) # get a summary of final model above
+#Summary of Negative Binomial distribution fit to gamlss model above (wave exposure version)
+
+#Check AIC values for new model compared to old ones
+GAIC(NegativeBinomial.full.mod, DoublePoisson.full.mod, Geometric.full.mod,NegativeBinomial.wave_exposure.mod)
+#Note: Negative Binomial distribution still has lowest AIC value for the models (1218.520)
+#From models above
+```
+
+```{r message=FALSE, warning=FALSE}
+############
+###Graphs###
+############
+
+#Box plots!
+
+Box_plot_total_snails = DSData %>%
+  dplyr::select(-notes) %>%
+  filter(survey == 2 | survey == 3) %>%
+  mutate(percentage_in = (in. / total) * 100)%>% 
+  mutate(treatment = as.factor(treatment)) %>% 
+  mutate(treatment = fct_relevel(treatment, "Control", "Mass_Mortality", "Cleared"))
+#Filter the data for the plot and re-ordered the naming sequence to follow logical pattern
+
+TotalSnailPlot <- ggplot(data = Box_plot_total_snails, aes(y = total, x = treatment, fill = treatment, color_palette(virdis))) +
+  geom_boxplot() +
+  geom_point() +
+  xlab("Treatment") + 
+  ylab("Total Snail Count") +
+  facet_grid(. ~ wave_exposure) + 
+  theme_bw() + 
+  theme(legend.position = "None",
+        strip.text.x = element_text (size = 18),
+        axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14),
+  axis.title.y = element_text(size = 16))+
+  scale_fill_manual(values = c('#25858EFF', '#4AC16DFF', "#FDE725FF")) + 
+  scale_colour_manual(values = c('#25858EFF', '#4AC16DFF', "#FDE725FF")) 
+
+#plot and re-name legend to fit aesthetics
+TotalSnailPlot+ scale_x_discrete(labels=c("Control" = "Control", "Mass_Mortality" = "Mass Mortality", "Cleared" = "Cleared")) 
+
+
+# Scatter plots 
+
+#With wave exposure (Figure 4)
+exposed_scatter = DSData %>%
+  dplyr::select(-notes) %>%
+  dplyr::select(-c(percent_cover_barnacles))%>%
+  mutate(percentage_in = (in. / total) * 100)%>% 
+  mutate(treatment = as.factor(treatment)) %>% 
+  mutate(treatment = fct_relevel(treatment, "Control", "Mass_Mortality", "Cleared"))%>%
+  group_by(survey, treatment, wave_exposure)%>%
+  mutate(mean_total = mean(total), SE = std.error(total))%>%
+  na.omit()
+#Filtered data, received standard error, and re-ordered the naming sequence to follow logical pattern
+  
+exposure <- ggplot(exposed_scatter, aes(x=survey, y=mean_total, color=treatment,color_palette(virdis))) +
+  geom_point(size = 3, position = position_dodge(width = 0.15)) +
+  xlab("Week surveyed") +  
+  ylab("Total snails (avg ± SE)") +
+  theme_bw() + 
+  geom_line(aes(group = treatment), position = position_dodge(width = 0.15))+
+  geom_linerange(aes(ymin = mean_total - SE, ymax = mean_total + SE), position = position_dodge(width =                  0.15)) + 
+  facet_grid(. ~ wave_exposure) + 
+  theme(strip.text.x = element_text (size = 18),
+        axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14),
+  axis.title.y = element_text(size = 16))+
+  scale_x_discrete(name ="Week surveyed",
+                   limits=c("0","2","4"))+
+  scale_colour_manual(values=c('#25858EFF', '#4AC16DFF', "#FDE725FF"),
+                        name="Treatment",
+                        breaks=c("Control", "Mass_Mortality", "Cleared"),
+                        labels=c("Control", "Mass Mortality", "Cleared")) 
+
+#plot and re-name legend to fit aesthetics
+exposure + scale_fill_discrete(name = "Treatment",
+                              labels=c("Control", "Mass mortality", "Cleared")) 
+```
+
+
+```{r message=FALSE, warning=FALSE}
+###################
+###Percent Cover###
+##################
+
+#Comparing exposures of barnacle cover at base level community structure
+percent_cover <- DSData [c(0:48),] %>%
+  mutate(percent_cover_barnacles = as.numeric(percent_cover_barnacles)) %>%
+  mutate(barnacle_cover = as.numeric(barnacle_cover))
+#Change both percent_cover_barnacles and barnacle_cover to numeric and filter for percent cover prior to treatment as to compare sites
+
+#Checking assumptions
+qqnorm(DSData$total)
+qqline(DSData$total)
+#visualizing normality: looks non-normal
+shapiro.test(percent_cover$percent_cover_barnacles)
+#p= 0.0002445, the distribution is significantly different from a normal distribution
+#Thus must use non-parametric anova 
+
+#Non-parametric anova
+kruskal.test(percent_cover_barnacles ~ site, data = percent_cover)
+#p-value= 8.698x10^-8 so the barnacle cover differs across sites but between which sites - Duns Test
+dunnTest(percent_cover_barnacles ~ site, data = percent_cover)
+#Dunn test proves Brady's Point is similar in cover to Scott's Bay (p= 1.0)
+#Dunn test proves Rance island is similar in cover to Strawberry Point (p= 0.78) 
+#Dunn test proves to statistically differ between all other sites 
+```
+
+
+

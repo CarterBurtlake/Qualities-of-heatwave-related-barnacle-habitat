@@ -1,0 +1,58 @@
+---
+title: "DSProj"
+author: "Carter Burtlake"
+date: "08/11/2021"
+output: html_document
+---
+
+```{r}
+library(readxl)
+library(ggpubr)
+library(ggplot2)
+library(dplyr)
+library(performance) 
+library(agridat)
+library(scales)
+library(viridis)
+library(tidyverse)
+```
+
+# Read 
+```{r}
+DSData <- read.csv("DSProjectR.csv")
+```
+
+```{r}
+Brady_point_kill1 <- filter(DSData, site == "Brady_point", survey == 1, treatment == "Kill")
+Brady_point_kill2 <- filter(DSData, site == "Brady_point", survey == 2, treatment == "Kill")
+
+Scotts_bay_kill1 <- filter(DSData, site == "Scotts_bay", survey == 1, treatment == "Kill")
+Scotts_bay_kill2 <- filter(DSData, site == "Scotts_bay", survey == 2, treatment == "Kill")
+
+Rance_island_kill1 <- filter(DSData, site == "Rance_island", survey == 1, treatment == "Kill")
+Rance_island_kill2 <- filter(DSData, site == "Rance_island", survey == 2, treatment == "Kill")
+
+Strawberry_point_kill1 <- filter(DSData, site == "Strawberry_point", survey == 1, treatment == "Kill")
+Strawberry_point_kill2 <- filter(DSData, site == "Strawberry_point", survey == 2, treatment == "Kill")
+```
+
+
+# Comparing means of Kills
+```{r}
+t.test(length_mm ~ species, data = sculpin_ttest, alternative = "two.sided", var.equal = T, conf.level = 0.95)
+```
+
+
+```{r}
+Brady_point_leave1 <- filter(DSData, site == "Brady_point", survey == 1, treatment == "Leave")
+Brady_point_leave2 <- filter(DSData, site == "Brady_point", survey == 2, treatment == "Leave")
+
+Scotts_bay_leave1 <- filter(DSData, site == "Scotts_bay", survey == 1, treatment == "Leave")
+Scotts_bay_leave2 <- filter(DSData, site == "Scotts_bay", survey == 2, treatment == "Leave")
+
+Rance_island_leave1 <- filter(DSData, site == "Rance_island", survey == 1, treatment == "Leave")
+Rance_island_leave2 <- filter(DSData, site == "Rance_island", survey == 2, treatment == "Leave")
+
+Strawberry_point_leave1 <- filter(DSData, site == "Strawberry_point", survey == 1, treatment == "Leave")
+Strawberry_point_leave2 <- filter(DSData, site == "Strawberry_point", survey == 2, treatment == "Leave")
+```
