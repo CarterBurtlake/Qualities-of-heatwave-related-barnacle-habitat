@@ -1,0 +1,220 @@
+---
+title: "DS_Dislodgement_2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#############
+###Read in###
+#############
+install.packages("emmeans")
+library(performance)
+library(tidyverse)
+library(car)
+library(patchwork)
+library(ggplot2)
+library(fitdistrplus)
+library(lme4)
+library(emmeans)
+
+Dislodgement_data <- read.csv("DS_Dislodgment_2022.csv")
+summary(Dislodgement_data)
+
+theme_326 <- theme_classic() + 
+  theme(
+    axis.title = element_text(size = 16), 
+    axis.text = element_text(size = 12, colour = "black"), 
+    axis.text.x = element_text(margin = margin(t = 10, b= 10, unit = "pt")), 
+    axis.text.y = element_text(margin = margin(r = 10, l= 10)),
+    legend.title = element_text(size = 16), 
+    legend.text = element_text(size = 14), 
+    strip.text = element_text(size = 14)) 
+```
+
+```{r}
+##########################
+###Distribution fitting###
+##########################
+is.factor(Dislodgement_data$Dislodgement_force_N)
+is.numeric(Dislodgement_data$Dislodgement_force_N)
+
+hist(Dislodgement_data$Dislodgement_force_N)
+shapiro.test(Dislodgement_data$Dislodgement_force_N) #non-normal
+descdist(Dislodgement_data$Dislodgement_force_N)
+
+mGA <- histDist(Dislodgement_data$Dislodgement_force_N, "GA", density = T, main = "Gamma")
+mlN <- histDist(Dislodgement_data$Dislodgement_force_N, "LOGNO", density = T, main = "lNorm") 
+mWE <- histDist(Dislodgement_data$Dislodgement_force_N, "WEI", density = T, main = "Weibull")
+mNO <- histDist(Dislodgement_data$Dislodgement_force_N, "NO", density = T, main = "Normal")
+
+fit.gamma <- fitdist(Dislodgement_data$Dislodgement_force_N, "gamma")
+fit.lnorm <- fitdist(Dislodgement_data$Dislodgement_force_N, "lnorm")
+fit.weibull <- fitdist(Dislodgement_data$Dislodgement_force_N, "weibull")
+fit.norm <- fitdist(Dislodgement_data$Dislodgement_force_N, "norm")
+
+plot(fit.gamma)
+plot(fit.lnorm)
+plot(fit.weibull)
+plot(fit.norm)
+#Qualitatively think that gamma and weibull fit best
+
+GAIC(mGA, mlN, mWE, mNO)
+#Weibull and Gamma are equal at 1014.015 and 1015.087 respectively 
+#Gamma distribution follows the normality assumptions better so running with that one to start
+```
+
+```{r}
+##########################
+###Visualizing the data###
+##########################
+
+Dislodgement_data$Treatment <- factor(Dislodgement_data$Treatment, levels = c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"))
+levels(Dislodgement_data$Treatment)
+#Re-organize the data names so plotting it makes logical sense
+
+updated_dislodgement_data <- Dislodgement_data%>%
+  mutate(barnacle_elipse_area = (Barnacle_width_mm/2)*(Barnacle_length_mm/2)*pi)
+#Create ellipse area column from barnacle basal plate in field measurements
+
+updated_dislodgement_data$Treatment <- factor(Dislodgement_data$Treatment, levels = c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"))
+levels(updated_dislodgement_data$Treatment)
+Dislodgement_plot <- ggplot(aes(x = Treatment, y = Dislodgement_force_N, fill = Treatment), data = updated_dislodgement_data) +
+  geom_boxplot() + 
+  theme_326 +
+  ylim(min=0, max=60)+# add the pre-defined theme
+  labs(x = "Treatment", y = "Removal Force (N)") + # labels
+  scale_fill_manual(values = c("white", "antiquewhite1", "grey", "burlywood4"))+
+  theme(legend.position = "none")
+Dislodgement_plot
+#Box-plot of data
+
+Dislodgement_plot+ scale_x_discrete(labels=c("3_day_dead" = "3 Days Dead", "30_day_dead" = "30 Days Dead", "30_plus_day_dead" = "Older Than 30 Days Dead", "Live" = "Live")) 
+#Change names to be asthetic
+
+#SIZE TO FORCE PLOT
+ggplot(updated_dislodgement_data, aes(x=barnacle_elipse_area, y=Dislodgement_force_N, fill =Treatment)) + 
+  geom_point(aes(col= Treatment))+
+  theme_326 +
+  ylim(min=0, max=60)+ # add the pre-defined theme
+  labs(x = expression("Barnacle Basal Plate Area (mm"^2*")"), y = "Removal Force (N)") + 
+  geom_smooth(method=lm)+
+  scale_fill_manual(values=c("yellow", "blue","red","green"), 
+                       name="Treatment",
+                       breaks=c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"),
+                       labels=c("Live", "3 Days Dead", "30 Days Dead", "Older Than 30 Days Dead"))+
+  scale_colour_manual(values=c("yellow", "blue","red","green"), 
+                       name="Treatment",
+                       breaks=c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"),
+                       labels=c("Live", "3 Days Dead", "30 Days Dead", "Older Than 30 Days Dead"))
+#Compared treatment types to size to see how this impacts removal: elicits pos-hoc multiplicative model to test how these variables interact (as it looks as if they do)
+#Do I need R^2 for this?
+```
+
+
+```{r}
+############
+###Models###
+############
+
+#Consider finding out area of a diamond equation and mutating column to create that area and then do persons correlation test on the two variables to see if higher values of area -> higher values of force
+#Then run linear regression on them 
+
+updated_dislodgement_data <- Dislodgement_data%>%
+  mutate(barnacle_elipse_area = (Barnacle_width_mm/2)*(Barnacle_length_mm/2)*pi)
+
+#linear model with random factor
+Dislodgement_model <- lmer(Dislodgement_force_N ~ Treatment + barnacle_elipse_area + (1 | Rock_ID), data=  updated_dislodgement_data)
+
+#Checking assumptions
+check_model(Dislodgement_model) #assumptions of normality residuals and homogeneity of variance look okay
+
+### Stats
+summary(Dislodgement_model)
+Anova(Dislodgement_model, type = "II")
+Anova(Dislodgement_model)
+
+#POST-HOC realization that the two treatments likely interact after visualizing the data but didn't consider this in my initial hypothesis so ran multiplicative model to test this post hoc
+#multiplicative linear model with random factor
+Dislodgement_model_interaction <- lmer(Dislodgement_force_N ~ Treatment * barnacle_elipse_area + (1 | Rock_ID), data=  updated_dislodgement_data)
+#check assumptions till hold as expected (why co-linearity???)
+check_model(Dislodgement_model_interaction)
+#Stats
+summary(Dislodgement_model_interaction)
+Anova(Dislodgement_model_interaction, type = "III")
+
+
+#Comparing all of the treatment types against each other to determine how they differ individually
+emmeans(Dislodgement_model, pairwise~ Treatment)
+#Older than 30 days dead is statistically significant from all treatment types
+```
+
+```{r}
+####################
+###June 21st/2022###
+####################
+#Figure updates (name and colour changes)
+
+updated_dislodgement_data <- Dislodgement_data%>%
+  mutate(barnacle_elipse_area = (Barnacle_width_mm/2)*(Barnacle_length_mm/2)*pi)
+#Create ellipse area column from barnacle basal plate in field measurements
+
+updated_dislodgement_data$Treatment <- factor(Dislodgement_data$Treatment, levels = c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"))
+#Re-organize the data names so plotting it makes logical sense
+levels(updated_dislodgement_data$Treatment)
+#Initial figure
+Dislodgement_plot <- ggplot(aes(x = Treatment, y = Dislodgement_force_N, fill = Treatment, colour = Treatment, alpha = 0.2), data = updated_dislodgement_data) +
+  geom_boxplot() + 
+  scale_fill_manual(values = c("grey65", "darkgoldenrod", "salmon4", "grey5"))+
+  geom_jitter()+
+  scale_colour_manual(values = c("grey65", "darkgoldenrod", "salmon4", "grey5"))+
+  theme_326 +
+  geom_vline(xintercept = 1.5)+
+  ylim(min=0, max=60)+# add the pre-defined theme
+  labs(x = "Treatment", y = "Removal Force (N)") + # labels
+  theme(legend.position = "none")
+Dislodgement_plot
+#Box-plot of data
+
+Dislodgement_plot+ scale_x_discrete(labels=c("3_day_dead" = "Recent Mortality", "30_day_dead" = "Intermediate Mortality", "30_plus_day_dead" = "Prolonged Mortality", "Live" = "Live")) 
+#Change names to be aesthetic
+
+#Changed x-axis naming
+Updated_Dislodgement_plot <- ggplot(aes(x = Treatment, y = Dislodgement_force_N, fill = Treatment, colour = Treatment, alpha = 0.2), data = updated_dislodgement_data) +
+  geom_boxplot() + 
+  scale_fill_manual(values = c("grey65", "darkgoldenrod", "salmon4", "grey5"))+
+  geom_jitter()+
+  scale_colour_manual(values = c("grey65", "darkgoldenrod", "salmon4", "grey5"))+
+  theme_326 +
+  geom_vline(xintercept = 1.5)+
+  ylim(min=0, max=60)+# add the pre-defined theme
+  labs(x = "Time Since Mortality", y = "Removal Force (N)") + # labels
+  theme(legend.position = "none")
+Updated_Dislodgement_plot
+
+Updated_Dislodgement_plot+ scale_x_discrete(labels=c("3_day_dead" = "3 Days", "30_day_dead" = "30 Days", "30_plus_day_dead" = "+30 Days", "Live" = "Live")) + theme(axis.title.x = element_text(hjust=0.67))
+#Change names to be aesthetic
+
+#SIZE TO FORCE PLOT
+ggplot(updated_dislodgement_data, aes(x=barnacle_elipse_area, y=Dislodgement_force_N, fill =Treatment)) + 
+  geom_point(aes(col= Treatment))+
+  theme_326 +
+  ylim(min=0, max=60)+ # add the pre-defined theme
+  labs(x = expression("Barnacle Basal Plate Area (mm"^2*")"), y = "Removal Force (N)") + 
+  geom_smooth(method=lm)+
+  scale_fill_manual(values=c("grey65", "darkgoldenrod", "salmon4", "grey5"), 
+                       name="Treatment",
+                       breaks=c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"),
+                       labels=c("Live", "Recent Death", "Intermediate Death", "Prolonged Death"))+
+  scale_colour_manual(values=c("grey65", "darkgoldenrod", "salmon4", "grey5"), 
+                       name="Treatment",
+                       breaks=c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"),
+                       labels=c("Live", "Recent Death", "Intermediate Death", "Prolonged Death"))
+#Compared treatment types to size to see how this impacts removal: elicits pos-hoc multiplicative model to test how these variables interact (as it looks as if they do)
+#Do I need R^2 for this?
+
+```
+
