@@ -1,0 +1,384 @@
+---
+title: "IRP"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Disclaimer: The column titles of proportion are inproperly named as "proportion_removed" should be "proportion_remaining"
+
+
+```{r}
+#############
+###Read in###
+#############
+library(performance)
+library(tidyverse)
+library(car)
+library(patchwork)
+library(ggplot2)
+library(fitdistrplus)
+library(gamlss)
+library(lme4)
+
+Removal_data <- read.csv("IRP_data_split.csv") #the column naming convention in this needs to be changed (super confusing). A mistake was made and column 9/10/11/14/15 are all named x_removed when they should be x_remaining...FIX
+Barnacle_removal_data <- read.csv("IRP_barnacle.csv")
+summary(Removal_data)
+Removal_data <- Removal_data[-c(61),]
+
+theme_326 <- theme_classic() + 
+  theme(
+    axis.title = element_text(size = 16), 
+    axis.text = element_text(size = 12, colour = "black"), 
+    axis.text.x = element_text(margin = margin(t = 10, b= 10, unit = "pt")), 
+    axis.text.y = element_text(margin = margin(r = 10, l= 10)),
+    legend.title = element_text(size = 16), 
+    legend.text = element_text(size = 14), 
+    strip.text = element_text(size = 14)) 
+```
+
+```{r}
+################################
+###Bare vs barnacle###
+################################
+
+Removal_data$Split_proportion_removed <- as.numeric(Removal_data$Split_proportion_removed)
+is.factor(Removal_data$Split_proportion_removed)
+
+hist(Removal_data$Split_proportion_removed)
+shapiro.test(Removal_data$Split_proportion_removed)
+descdist(Removal_data$Split_proportion_removed)
+
+mGA <- histDist(Removal_data$Split_proportion_removed, "GA", density = T, main = "Gamma")
+mB <- histDist(Removal_data$Split_proportion_removed, "BI", density = T, main = "Binomial") #help
+mWE <- histDist(Removal_data$Split_proportion_removed, "WEI", density = T, main = "Weibull")
+mNO <- histDist(Removal_data$Split_proportion_removed, "NO", density = T, main = "Normal")
+
+fit.gamma <- fitdist(Barnacle_removal_data$Proportion, "gamma")
+fit.beta <- fitdist(Barnacle_removal_data$Proportion, "beta")
+fit.weibull <- fitdist(Barnacle_removal_data$Proportion, "weibull")
+fit.norm <- fitdist(Barnacle_removal_data$Proportion, "norm")
+
+plot(fit.gamma)
+plot(fit.weibull)
+plot(fit.norm)
+
+glm_binomial_barevsbarnacle.mod <- glm(Split_proportion_removed ~ Habitat_type, 
+               family = binomial(link = "logit"), 
+               data = Removal_data)
+summary(glm_binomial_barevsbarnacle.mod)
+#Habitat type proves significant p= 0.000339
+check_model(glm_binomial_barevsbarnacle.mod)
+#Variance is slightly skewed 
+
+sim1 <- simulateResiduals(glm_binomial_barevsbarnacle.mod)
+plot(sim1)
+
+fit.binomial <- fitdist(Removal_data$Split_proportion_removed, "binomial")
+plot(fit.binomial)
+
+
+##PLOTTING
+bare_vs_barn <- ggplot(aes(x = Habitat_type, y = Split_proportion_removed, fill = Habitat_type), data = Removal_data) +
+  geom_boxplot() + 
+  theme_326 + # add the pre-defined theme
+  labs(x = "Habitat Type", y = "Proportion Littorina Remaining") + # labels
+  scale_fill_manual(values = c("grey", "tan"))+
+  theme(legend.position = "none")
+bare_vs_barn
+
+bare_vs_barn+ scale_x_discrete(labels=c("Bare_rock" = "Bare rock", "Barnacle" = "Barnacle")) 
+#Seems more difficult to interpret as proportion remaining
+
+#Actually proportion removed plot
+
+Proportion_removed <- Removal_data %>%
+  mutate(bare_vs_barn_proportion_removed = 1-Split_proportion_removed)
+
+bare_vs_barn_removal <- ggplot(aes(x = Habitat_type, y = bare_vs_barn_proportion_removed, fill = Habitat_type), data = Proportion_removed) +
+  geom_boxplot() + 
+  theme_326 + # add the pre-defined theme
+  labs(x = "Habitat Type", y = "Proportion Littorina Removed") + # labels
+  scale_fill_manual(values = c("grey", "tan"))+
+  theme(legend.position = "none")
+bare_vs_barn_removal
+
+bare_vs_barn_removal+ scale_x_discrete(labels=c("Bare_rock" = "Bare rock", "Barnacle" = "Barnacle")) 
+
+find_median_bare <- Proportion_removed%>%
+  filter(Habitat_type == "Bare_rock")
+median(find_median_bare$bare_vs_barn_proportion_removed) #0.67
+
+find_median_barn <- Proportion_removed%>%
+  filter(Habitat_type == "Barnacle")
+median(find_median_barn$bare_vs_barn_proportion_removed) #0.14
+```
+
+```{r}
+#################################
+###In vs on barnacle###
+#################################
+
+Barnacle_removal_data$Proportion <- as.numeric(Barnacle_removal_data$Proportion)
+is.factor(Barnacle_removal_data$Proportion)
+
+Barnacle_removal_data <- Barnacle_removal_data[-c(19,27,29,33),]
+#Remove data points which violated the requirements of having at least 5 individuals in each category type (in empty barnacles and adjacent to barnacles)
+
+hist(Barnacle_removal_data$Proportion)
+shapiro.test(Barnacle_removal_data$Proportion)
+descdist(Barnacle_removal_data$Proportion)
+
+?glm
+mGA <- histDist(Barnacle_removal_data$Proportion, "GA", density = T, main = "Gamma")
+mB <- histDist(Barnacle_removal_data$Proportion, "BI", density = T, main = "Binomial") #help
+mWE <- histDist(Barnacle_removal_data$Proportion, "WEI", density = T, main = "Weibull")
+mNO <- histDist(Barnacle_removal_data$Proportion, "NO", density = T, main = "Normal") # for comparison to a normal distribution!
+
+fit.gamma <- fitdist(Barnacle_removal_data$Proportion, "gamma")
+fit.beta <- fitdist(Barnacle_removal_data$Proportion, "beta")
+fit.weibull <- fitdist(Barnacle_removal_data$Proportion, "weibull")
+fit.norm <- fitdist(Barnacle_removal_data$Proportion, "norm")
+
+plot(fit.gamma)
+plot(fit.weibull)
+plot(fit.norm)
+
+GAIC(mGA, mWE, mNO)
+
+glmer_binomial_invson.mod <- glmer(Proportion ~ Habitat_type + (1|Rock.ID), 
+               family = binomial(link = "logit"), 
+               data = Barnacle_removal_data)
+summary(glmer_binomial_invson.mod)
+#Habitat type proves insignificant p= 0.077424
+check_model(glmer_binomial_invson.mod)
+#non-normal data, but relatively equal variance
+anova(glmer_binomial_invson.mod)
+#model was fit with random effect of Rock ID but the model this fit was poor due to singularity in the data. Essentially having only 2 categories per rock blast 
+
+glm_binomial_invson.mod <- glm(Proportion ~ Habitat_type, 
+               family = binomial(link = "logit"), 
+               data = Barnacle_removal_data)
+anova(glm_binomial_invson.mod)
+summary(glm_binomial_invson.mod)
+check_model(glm_binomial_invson.mod)
+
+sim2 <- simulateResiduals(glm_binomial_invson.mod)
+plot(sim2)
+plotResiduals(sim2, form = Barnacle_removal_data$Habitat_type, xlab = "Habitat_type")
+
+## PLOT
+
+Proportion_removed_invson <- Barnacle_removal_data %>%
+  mutate(in_vs_on_proportion_removed = 1-Proportion)
+
+in_vs_on_removal <- ggplot(aes(x = Habitat_type, y = in_vs_on_proportion_removed, fill = Habitat_type), data = Proportion_removed_invson) +
+  geom_boxplot() + 
+  ylim(min=0, max=1)+
+  theme_326 + # add the pre-defined theme
+  labs(x = "Habitat Type", y = "Proportion Littorina Removed") + # labels
+  scale_fill_manual(values = c("bisque2", "burlywood4"))+
+  theme(legend.position = "none")
+in_vs_on_removal
+
+in_vs_on_removal+ scale_x_discrete(labels=c("In" = "In empty barnacles", "On" = "Adjacent to barnacles")) 
+```
+
+```{r}
+###################
+###Paired t-test###
+###################
+
+t_test_data <- Barnacle_removal_data[-c(5,6,11,12,15,16,19,20,23,24,27,28,29,30,33,34),] #26 observations (n=26)
+t_test_data$Proportion <- as.numeric(t_test_data$Proportion)
+hist(t_test_data$Proportion)
+log_t_test_data <- log(t_test_data$Proportion)
+hist(log_t_test_data)
+#log proportional data doesn't work great: try logit function log(p/(1-p) (where p is proportion)
+
+t_test_data_transformed <- t_test_data%>%
+  mutate(proporion_minus = Proportion - 0.01)%>%
+  mutate(logit_proportion = log(proporion_minus/(1-proporion_minus)))
+hist(t_test_data_transformed$logit_proportion)
+shapiro.test(t_test_data_transformed$logit_proportion) #Cannot normalize data: use non-parametric wilcox sign test
+
+group_by(t_test_data, Rock.ID) %>%
+  summarise(
+    count = n(),
+    median = median(Proportion, na.rm = TRUE),
+    IQR = IQR(Proportion, na.rm = TRUE))
+
+wilcox.test(Proportion ~ Habitat_type, data = t_test_data, paired = TRUE)
+#P value = 0.0001363
+
+## PLOT
+
+Proportion_removed_invson_ttest <- t_test_data %>%
+  mutate(in_vs_on_proportion_removed = 1-Proportion)
+
+in_vs_on_removal <- ggplot(aes(x = Habitat_type, y = in_vs_on_proportion_removed, fill = Habitat_type), data = Proportion_removed_invson_ttest) +
+  geom_boxplot() + 
+  ylim(min=0, max=1)+
+  theme_326 + # add the pre-defined theme
+  labs(x = "Habitat Type", y = "Proportion Littorina Removed") + # labels
+  scale_fill_manual(values = c("bisque2", "burlywood4"))+
+  theme(legend.position = "none")+
+  geom_line(aes(group = Rock.ID)) + 
+  geom_point(size = 0.5)
+in_vs_on_removal
+
+p1 <- in_vs_on_removal+ scale_x_discrete(labels=c("In" = "In empty barnacles", "On" = "Adjacent to barnacles"))
+p1
+
+in_vs_on_removal_lines <- ggplot(aes(x = Habitat_type, y = in_vs_on_proportion_removed, fill = Habitat_type), data = Proportion_removed_invson_ttest) +
+  ylim(min=0, max=1)+
+  theme_326 + # add the pre-defined theme
+  labs(x = "Habitat Type", y = "Proportion Littorina Removed") + # labels
+  scale_fill_manual(values = c("bisque2", "burlywood4"))+
+  theme(legend.position = "none")+
+  geom_line(aes(group = Rock.ID)) + 
+  geom_point(size = 2)
+
+p2 <-in_vs_on_removal_lines+ scale_x_discrete(labels=c("In" = "In empty barnacles", "On" = "Adjacent to barnacles"))
+p2
+p1 +p2
+
+summary(Proportion_removed_invson_ttest)
+
+find_median_On <- Proportion_removed_invson_ttest%>%
+  filter(Habitat_type == "On")
+median(find_median_On$in_vs_on_proportion_removed) #0.17
+
+find_median_In <- Proportion_removed_invson_ttest%>%
+  filter(Habitat_type == "In")
+median(find_median_In$in_vs_on_proportion_removed) #0
+
+ggpaired(
+  data,
+  cond1,
+  cond2,
+  x = NULL,
+  y = NULL,
+  id = NULL,
+  color = "black",
+  fill = "white",
+  palette = NULL,
+  width = 0.5,
+  point.size = 1.2,
+  line.size = 0.5,
+  line.color = "black",
+  linetype = "solid",
+  title = NULL,
+  xlab = "Condition",
+  ylab = "Value",
+  facet.by = NULL,
+  panel.labs = NULL,
+  short.panel.labs = TRUE,
+  label = NULL,
+  font.label = list(size = 11, color = "black"),
+  label.select = NULL,
+  repel = FALSE,
+  label.rectangle = FALSE,
+  ggtheme = theme_pubr())
+
+ggpaired(Proportion_removed_invson_ttest, x = "Habitat Type", y = "Proportion Littorina Removed",
+ color = "supp", line.color = "gray", line.size = 0.4,
+ palette = "npg")
+
+ggplot(Proportion_removed_invson_ttest, aes(x = Habitat_type, y = Proportion_removed_invson_ttest)) + 
+geom_boxplot(aes(fill = Habitat_type), alpha = .2) +
+geom_line(aes(group = Rock.ID)) + 
+geom_point(size = 2)
+```
+
+```{r}
+##########################
+###June 21st/2022 edits###
+##########################
+
+##PLOTTING
+Proportion_removed <- Removal_data %>%
+  mutate(bare_vs_barn_proportion_removed = 1-Split_proportion_removed)
+#More intuitive to look at proportion removed by simulated wave
+
+bare_vs_barn_removal <- ggplot(aes(x = Habitat_type, y = bare_vs_barn_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed) +
+  geom_boxplot() + 
+  scale_fill_manual(values = c("grey65", "darkgoldenrod"))+
+  geom_jitter()+
+  scale_colour_manual(values =c("grey65", "darkgoldenrod"))+
+  theme_326 + # add the pre-defined theme
+  labs(x = "Habitat Type", y = "Proportion Littorina Removed") + # labels
+  theme(legend.position = "none")
+bare_vs_barn_removal
+
+p1 <- bare_vs_barn_removal+ scale_x_discrete(labels=c("Bare_rock" = "Bare rock", "Barnacle" = "Barnacle")) 
+p1
+
+find_median_bare <- Proportion_removed%>%
+  filter(Habitat_type == "Bare_rock")
+median(find_median_bare$bare_vs_barn_proportion_removed) #0.67
+
+find_median_barn <- Proportion_removed%>%
+  filter(Habitat_type == "Barnacle")
+median(find_median_barn$bare_vs_barn_proportion_removed) #0.14
+
+#PLOTTING PAIRED BARNACLE DATA
+
+t_test_data <- Barnacle_removal_data[-c(5,6,11,12,15,16,19,20,23,24,27,28,29,30,33,34),] #26 observations (n=26)
+t_test_data$Proportion <- as.numeric(t_test_data$Proportion)
+
+Proportion_removed_invson_ttest <- t_test_data %>%
+  mutate(in_vs_on_proportion_removed = 1-Proportion)
+#updating new csv to read removal instead of remaining as its easier to interpret
+
+in_vs_on_removal <- ggplot(aes(x = Habitat_type, y = in_vs_on_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed_invson_ttest) +
+  geom_boxplot() + 
+  scale_fill_manual(values = c("grey5", "salmon4"))+
+  geom_jitter()+
+  scale_colour_manual(values = c("grey5", "salmon4"))+
+  ylim(min=0, max=1)+
+  theme_326 + # add the pre-defined theme
+  labs(x = "Habitat Type", y = "Proportion Littorina Removed") + # labels
+  theme(legend.position = "none")
+in_vs_on_removal
+
+p2 <- in_vs_on_removal+ scale_x_discrete(labels=c("In" = "In empty barnacles", "On" = "Adjacent to barnacles"))
+p2
+
+p1+p2
+#Plot both the differences in general barnacle cover vs bare rock and the fine scale barnacle properties 
+
+#Adjustments: New colour scheme | Patchwork | Removal of x-axis title
+updated_bare_vs_barn_removal <- ggplot(aes(x = Habitat_type, y = bare_vs_barn_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed) +
+  geom_boxplot() + 
+  scale_fill_manual(values = c("grey40", "deepskyblue"))+
+  geom_jitter()+
+  scale_colour_manual(values =c("grey40", "deepskyblue"))+
+  theme_326 + # add the pre-defined theme
+  labs(y = "Proportion Littorina Removed") + # labels
+  theme(legend.position = "none")
+updated_bare_vs_barn_removal
+
+p1 <- updated_bare_vs_barn_removal+ scale_x_discrete(labels=c("Bare_rock" = "Bare rock", "Barnacle" = "Barnacle")) + theme(axis.title.x = element_blank())
+p1
+
+in_vs_on_removal <- ggplot(aes(x = Habitat_type, y = in_vs_on_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed_invson_ttest) +
+  geom_boxplot() + 
+  scale_fill_manual(values = c("royalblue", "lightskyblue"))+
+  geom_jitter()+
+  scale_colour_manual(values = c("royalblue", "lightskyblue"))+
+  ylim(min=0, max=1)+
+  theme_326 + # add the pre-defined theme
+  labs(y = "Proportion Littorina Removed") + # labels
+  theme(legend.position = "none")
+in_vs_on_removal
+
+p2 <- in_vs_on_removal+ scale_x_discrete(labels=c("In" = "In empty barnacles", "On" = "Adjacent to barnacles")) + theme(axis.title.x = element_blank())
+p2
+
+Combined_figure <- p1 + p2
+Combined_figure + plot_annotation(tag_levels = 'A')
+```
+
