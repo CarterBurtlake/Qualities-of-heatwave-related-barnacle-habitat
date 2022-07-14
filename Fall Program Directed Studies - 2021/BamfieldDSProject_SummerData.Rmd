@@ -1,0 +1,114 @@
+---
+title: 'Littorina Abundance Figure: Summer Data'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+library(readxl)
+library(ggpubr)
+library(performance) 
+library(agridat)
+library(scales)
+library(viridis)
+library(plotrix)
+
+SummerData <- read.csv("SummerData.csv")
+
+Box_plot_total_snails = SummerData %>%
+  dplyr::select(-notes) %>%
+  filter(survey == 2 | survey == 3 | survey == 4) %>%
+  mutate(treatment = as.factor(treatment)) %>% 
+  mutate(treatment = fct_relevel(treatment, "Control", "Mass_Mortality", "Cleared"))
+#Filter the data for the plot and re-ordered the naming sequence to follow logical pattern
+
+TotalSnailPlot <- ggplot(data = Box_plot_total_snails, aes(y = total, x = treatment, fill = treatment, color_palette(virdis))) +
+  geom_boxplot() +
+  geom_point() +
+  xlab("Treatment") + 
+  ylab("Total Snail Count") +
+  facet_grid(. ~ wave_exposure) + 
+  theme_bw() + 
+  theme(legend.position = "None",
+        strip.text.x = element_text (size = 18),
+        axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14),
+  axis.title.y = element_text(size = 16))+
+  scale_fill_manual(values = c('#25858EFF', '#4AC16DFF', "#FDE725FF")) + 
+  scale_colour_manual(values = c('#25858EFF', '#4AC16DFF', "#FDE725FF")) 
+
+
+#plot and re-name legend to fit aesthetics
+TotalSnailPlot+ scale_x_discrete(labels=c("Control" = "Control", "Mass_Mortality" = "Mass Mortality", "Cleared" = "Cleared")) 
+
+# Scatter plots 
+
+#With wave exposure (Figure 4)
+ScatterPlot = SummerData%>%
+  dplyr::select(-notes) %>%
+  dplyr::select(-c(percent_cover_barnacles))%>%
+  mutate(treatment = as.factor(treatment)) %>% 
+  mutate(treatment = fct_relevel(treatment, "Control", "Mass_Mortality", "Cleared"))%>%
+  group_by(survey, treatment, wave_exposure)%>%
+  mutate(mean_total = mean(total), SE = std.error(total))%>%
+  na.omit()
+#Filtered data, received standard error, and re-ordered the naming sequence to follow logical pattern
+
+#Timebased X-axis
+exposure <- ggplot(ScatterPlot, aes(x=survey, y=mean_total, color=treatment,color_palette(virdis))) +
+  geom_point(size = 3, position = position_dodge(width = 0.15)) +
+  xlab("Week surveyed") +  
+  ylab("Total snails (avg ± SE)") +
+  theme_bw() + 
+  geom_line(aes(group = treatment), position = position_dodge(width = 0.15))+
+  geom_linerange(aes(ymin = mean_total - SE, ymax = mean_total + SE), position = position_dodge(width =                  0.15)) + 
+  geom_vline(xintercept = 3.5)+
+  facet_grid(. ~ wave_exposure) + 
+  theme(strip.text.x = element_text (size = 18),
+        axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14),
+  axis.title.y = element_text(size = 16))+
+  scale_x_discrete(name ="Week surveyed",
+                   limits=c("0","2","4","32"))+
+  scale_colour_manual(values=c('#25858EFF', '#4AC16DFF', "#FDE725FF", "#440154FF"),
+                        name="Treatment",
+                        breaks=c("Control", "Mass_Mortality", "Cleared"),
+                        labels=c("Control", "Mass Mortality", "Cleared")) 
+
+#plot and re-name legend to fit aesthetics
+exposure + scale_fill_discrete(name = "Treatment",
+                              labels=c("Control", "Mass mortality", "Cleared")) 
+
+#Categorical X-axis
+exposure_2 <- ggplot(ScatterPlot, aes(x=survey, y=mean_total, color=treatment,color_palette(virdis))) +
+  geom_point(size = 3, position = position_dodge(width = 0.15)) +
+  xlab("Week surveyed") +  
+  ylab("Total snails (avg ± SE)") +
+  theme_bw() + 
+  geom_line(aes(group = treatment), position = position_dodge(width = 0.15))+
+  geom_linerange(aes(ymin = mean_total - SE, ymax = mean_total + SE), position = position_dodge(width =                  0.15)) + 
+  geom_vline(xintercept = 3.5)+
+  geom_vline(xintercept = 1.5)+
+  facet_grid(. ~ wave_exposure) + 
+  theme(strip.text.x = element_text (size = 18),
+        axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14),
+  axis.title.y = element_text(size = 16))+
+  scale_x_discrete(name ="Week surveyed",
+                   limits=c("Before Treatment","Early Fall","Late Fall","Summer"))+
+  scale_colour_manual(values=c('#25858EFF', '#4AC16DFF', "#FDE725FF", "#440154FF"),
+                        name="Treatment",
+                        breaks=c("Control", "Mass_Mortality", "Cleared"),
+                        labels=c("Control", "Mass Mortality", "Cleared")) 
+
+#plot and re-name legend to fit aesthetics
+exposure_2 + scale_fill_discrete(name = "Treatment",
+                              labels=c("Control", "Mass mortality", "Cleared"))
+```
+
