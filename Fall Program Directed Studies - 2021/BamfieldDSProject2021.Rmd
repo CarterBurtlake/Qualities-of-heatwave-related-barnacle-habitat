@@ -27,6 +27,14 @@ library(LambertW)
 library(gamlss)
 library(FSA)
 library(formatR)
+#July 15
+install.packages("mgcv")
+library(mgcv)
+
+#July 18th
+library(MASS)
+library(report)
+
 ```
 
 # Read In
@@ -76,7 +84,6 @@ GAIC(total_geom, total_NBF, total_dpoi)
 ###Models without summaries###
 #############################
 
-
 Geometric.full.mod <- gamlss(total ~ treatment + survey + treatment*survey + random(as.factor(site)), family = GEOM(), data = test_no_percent_cover, control = gamlss.control(n.cyc = 100))
 step.test_no_percent_cover_geom <- stepGAIC(Geometric.full.mod, direction = "backward", trace = F)
 formula(Geometric.full.mod) # get the final formula
@@ -102,6 +109,31 @@ formula(NegativeBinomial.wave_exposure.mod) # get the final formula
 step.test_no_percent_cover_NBF2$anova 
 # look at the terms as they were taken out in a step-wise fashion
 ```
+
+
+```{r}
+#########################
+###GAM model July 15th###
+#########################
+
+
+GAM.mod <-  gam(total ~ treatment + wave_exposure + treatment:survey + treatment:wave_exposure + random(as.factor(site)), family = nb(), data = test_no_percent_cover)
+
+formula(GAM.mod) #Not doing step-wise so doesn't remove anything?
+
+summary(GAM.mod)
+#I think mass mortality treatment isn't significant because it compares all 3 time points and they are overall/ on average too similar to the other treatment types (esp control)? But when consider through survey time it compares time 0 to the other weeks which makes it significant?
+```
+
+```{r}
+###########################
+###Mass Model July 18th###
+##########################
+
+MASS.mod <- glm.nb(formula = total ~ treatment + wave_exposure + treatment:survey + treatment:wave_exposure + random(as.factor(site)), data = test_no_percent_cover, link = log)
+report(MASS.mod) %>% summary()
+```
+
 
 ```{r}
 ###############################
