@@ -328,8 +328,8 @@ plot(simulateResiduals(mod2))
 
 # Note: I tried using poisson and negative binomial families, but quasipoisson seems like the 
 # best option from a residuals perspective. It also has the lowest AIC.
-#Carter: Quasipossion used when varience is not equal to the mean. In our case here, that could
-#be true. However, says this cannot run Quasipossion???
+#Carter: Quasipossion used when varience is not equal to the mean. In our case here, that could be true. However, says this cannot run Quasipossion???
+#Carter comment 2026: not sure how Amelia tested these distribution packages but the dARMA plot for poission looks bad. Should probably investigate
 
 # model summary here
 summary(mod2)
