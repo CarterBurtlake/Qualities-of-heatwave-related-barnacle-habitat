@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ###Read in###
 #############
 #install.packages("emmeans")
+#install.packages("see")
 library(performance)
 library(tidyverse)
 library(car)
@@ -22,6 +23,7 @@ library(ggplot2)
 library(fitdistrplus)
 library(lme4)
 library(emmeans)
+library(see)
 
 Dislodgement_data <- read.csv("DS_Dislodgment_2022.csv")
 summary(Dislodgement_data)
