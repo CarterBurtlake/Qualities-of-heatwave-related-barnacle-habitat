@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 #############
 ###Read in###
 #############
-install.packages("emmeans")
+#install.packages("emmeans")
 library(performance)
 library(tidyverse)
 library(car)
@@ -218,3 +218,4 @@ ggplot(updated_dislodgement_data, aes(x=barnacle_elipse_area, y=Dislodgement_for
 
 ```
 
+test
