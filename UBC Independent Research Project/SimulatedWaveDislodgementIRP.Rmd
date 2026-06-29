@@ -351,24 +351,31 @@ p1+p2
 #Plot both the differences in general barnacle cover vs bare rock and the fine scale barnacle properties 
 
 #Adjustments: New colour scheme | Patchwork | Removal of x-axis title
+
+Proportion_removed$Habitat_type <- factor(Proportion_removed$Habitat_type, levels=c("Barnacle", "Bare_rock"))
+
 updated_bare_vs_barn_removal <- ggplot(aes(x = Habitat_type, y = bare_vs_barn_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed) +
   geom_boxplot() + 
-  scale_fill_manual(values = c("grey40", "deepskyblue"))+
+  scale_fill_manual(values = c("grey75", "firebrick4"))+
   geom_jitter()+
-  scale_colour_manual(values =c("grey40", "deepskyblue"))+
+  scale_colour_manual(values =c("grey75", "firebrick4"))+
   theme_326 + # add the pre-defined theme
   labs(y = "Proportion Littorina Removed") + # labels
   theme(legend.position = "none")
 updated_bare_vs_barn_removal
 
-p1 <- updated_bare_vs_barn_removal+ scale_x_discrete(labels=c("Bare_rock" = "Bare rock", "Barnacle" = "Barnacle")) + theme(axis.title.x = element_blank())
+p1 <- updated_bare_vs_barn_removal+ scale_x_discrete(labels=c("Barnacle" = "Barnacle", "Bare_rock" = "Bare rock")) + theme(axis.title.x = element_blank())
 p1
+
+#Plot keeping colour scheme of other figures
+
+Proportion_removed_invson_ttest$Habitat_type <- factor(Proportion_removed_invson_ttest$Habitat_type, levels=c("On", "In"))
 
 in_vs_on_removal <- ggplot(aes(x = Habitat_type, y = in_vs_on_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed_invson_ttest) +
   geom_boxplot() + 
-  scale_fill_manual(values = c("royalblue", "lightskyblue"))+
+  scale_fill_manual(values = c("grey75", "chocolate4"))+
   geom_jitter()+
-  scale_colour_manual(values = c("royalblue", "lightskyblue"))+
+  scale_colour_manual(values = c("grey75", "chocolate4"))+
   ylim(min=0, max=1)+
   theme_326 + # add the pre-defined theme
   labs(y = "Proportion Littorina Removed") + # labels
