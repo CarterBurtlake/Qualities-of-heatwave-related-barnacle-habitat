@@ -204,7 +204,12 @@ Updated_Dislodgement_plot+ scale_x_discrete(labels=c("3_day_dead" = "3 Days", "3
 
 #SIZE TO FORCE PLOT
 ggplot(updated_dislodgement_data, aes(x=barnacle_elipse_area, y=Dislodgement_force_N, fill =Treatment)) + 
-  geom_point(aes(col= Treatment), size = 2)+
+  geom_point(aes(shape= Treatment, colour = Treatment), size = 1.5)+
+  scale_shape_manual(values=c(23,16,17,15))+
+  guides(
+    colour = guide_legend(override.aes = list(shape = c(23,16,17,15))),
+    shape = "none"
+  ) +
   theme_326 +
   ylim(min=0, max=60)+ # add the pre-defined theme
   labs(x = expression("Barnacle Basal Plate Area (mm"^2*")"), y = "Removal Force (N)") + 
@@ -217,9 +222,10 @@ ggplot(updated_dislodgement_data, aes(x=barnacle_elipse_area, y=Dislodgement_for
                        name="Treatment",
                        breaks=c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"),
                        labels=c("live", "3 days since death", "30 days since death", "30+ days since death"))
-#Compared treatment types to size to see how this impacts removal: elicits pos-hoc multiplicative model to test how these variables interact (as it looks as if they do)
+#Compared treatment types to size tcolour = #Compared treatment types to size to see how this impacts removal: elicits pos-hoc multiplicative model to test how these variables interact (as it looks as if they do)
 #Do I need R^2 for this?
 
+#ggsave("Figures/UBCRemoval.png", device = "png", height = 9, width = 12, dpi = 400)
 ```
 
 test
