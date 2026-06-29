@@ -387,6 +387,8 @@ p2
 
 Combined_figure <- p1 + p2
 Combined_figure + plot_annotation(tag_levels = 'A')
+
+ggsave("Figures/FigureSimulatedWave.png", device = "png", height = 9, width = 12, dpi = 400)
 ```
 
 test
