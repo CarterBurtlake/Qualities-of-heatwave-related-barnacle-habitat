@@ -373,9 +373,9 @@ Proportion_removed_invson_ttest$Habitat_type <- factor(Proportion_removed_invson
 
 in_vs_on_removal <- ggplot(aes(x = Habitat_type, y = in_vs_on_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed_invson_ttest) +
   geom_boxplot() + 
-  scale_fill_manual(values = c("grey75", "chocolate4"))+
+  scale_fill_manual(values = c("steelblue4", "darkolivegreen4"))+
   geom_jitter()+
-  scale_colour_manual(values = c("grey75", "chocolate4"))+
+  scale_colour_manual(values = c("steelblue4", "darkolivegreen4"))+
   ylim(min=0, max=1)+
   theme_326 + # add the pre-defined theme
   labs(y = "Proportion Littorina Removed") + # labels
@@ -388,7 +388,7 @@ p2
 Combined_figure <- p1 + p2
 Combined_figure + plot_annotation(tag_levels = 'A')
 
-#ggsave("Figures/ConstantColours.png", device = "png", height = 9, width = 12, dpi = 400)
+#ggsave("Figures/UniqueColours.png", device = "png", height = 9, width = 12, dpi = 400)
 ```
 
 test
