@@ -388,7 +388,7 @@ p2
 Combined_figure <- p1 + p2
 Combined_figure + plot_annotation(tag_levels = 'A')
 
-ggsave("Figures/UniqueColours.png", device = "png", height = 9, width = 12, dpi = 400)
+#ggsave("Figures/ConstantColours.png", device = "png", height = 9, width = 12, dpi = 400)
 ```
 
 test
