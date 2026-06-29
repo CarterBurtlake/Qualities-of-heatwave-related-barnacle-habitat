@@ -204,19 +204,19 @@ Updated_Dislodgement_plot+ scale_x_discrete(labels=c("3_day_dead" = "3 Days", "3
 
 #SIZE TO FORCE PLOT
 ggplot(updated_dislodgement_data, aes(x=barnacle_elipse_area, y=Dislodgement_force_N, fill =Treatment)) + 
-  geom_point(aes(col= Treatment))+
+  geom_point(aes(col= Treatment), size = 2)+
   theme_326 +
   ylim(min=0, max=60)+ # add the pre-defined theme
   labs(x = expression("Barnacle Basal Plate Area (mm"^2*")"), y = "Removal Force (N)") + 
-  geom_smooth(method=lm)+
-  scale_fill_manual(values=c("grey65", "darkgoldenrod", "salmon4", "grey5"), 
+  geom_smooth(method=lm, linewidth = 1, aes(colour = Treatment))+
+  scale_fill_manual(values=c("grey75", "darkgoldenrod3", "chocolate4", "grey5"), 
                        name="Treatment",
                        breaks=c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"),
-                       labels=c("Live", "Recent Death", "Intermediate Death", "Prolonged Death"))+
-  scale_colour_manual(values=c("grey65", "darkgoldenrod", "salmon4", "grey5"), 
+                       labels=c("live", "3 days since death", "30 days since death", "30+ days since death"))+
+  scale_colour_manual(values=c("grey75", "darkgoldenrod3", "chocolate4", "grey5"), 
                        name="Treatment",
                        breaks=c("Live", "3_day_dead", "30_day_dead", "30_plus_day_dead"),
-                       labels=c("Live", "Recent Death", "Intermediate Death", "Prolonged Death"))
+                       labels=c("live", "3 days since death", "30 days since death", "30+ days since death"))
 #Compared treatment types to size to see how this impacts removal: elicits pos-hoc multiplicative model to test how these variables interact (as it looks as if they do)
 #Do I need R^2 for this?
 
