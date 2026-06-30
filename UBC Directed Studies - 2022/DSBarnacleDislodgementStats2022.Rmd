@@ -225,7 +225,7 @@ ggplot(updated_dislodgement_data, aes(x=barnacle_elipse_area, y=Dislodgement_for
 #Compared treatment types to size tcolour = #Compared treatment types to size to see how this impacts removal: elicits pos-hoc multiplicative model to test how these variables interact (as it looks as if they do)
 #Do I need R^2 for this?
 
-ggsave("Figures/UBCRemoval.png", device = "png", height = 9, width = 12, dpi = 400)
+#ggsave("Figures/UBCRemoval.png", device = "png", height = 9, width = 12, dpi = 400)
 ```
 
 test
