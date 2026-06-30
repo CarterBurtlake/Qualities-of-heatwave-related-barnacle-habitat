@@ -247,8 +247,8 @@ exposure <- ggplot(exposed_scatter, aes(x=survey, y=mean_total, color=treatment,
   xlab("Week surveyed") +  
   ylab("Total snails (avg ± SE)") +
   theme_bw() + 
-  geom_line(aes(group = treatment), position = position_dodge(width = 0.15))+
-  geom_linerange(aes(ymin = mean_total - SE, ymax = mean_total + SE), position = position_dodge(width =                  0.15)) + 
+  geom_line(aes(group = treatment), position = position_dodge(width = 0.15), size = 1)+
+  geom_linerange(aes(ymin = mean_total - SE, ymax = mean_total + SE), position = position_dodge(width = 0.15)) + 
   facet_grid(. ~ wave_exposure) + 
   theme(strip.text.x = element_text (size = 18),
         axis.title.x = element_text(size = 16),
