@@ -355,10 +355,16 @@ p1+p2
 Proportion_removed$Habitat_type <- factor(Proportion_removed$Habitat_type, levels=c("Barnacle", "Bare_rock"))
 
 updated_bare_vs_barn_removal <- ggplot(aes(x = Habitat_type, y = bare_vs_barn_proportion_removed, fill = Habitat_type, colour = Habitat_type, alpha = 0.3), data = Proportion_removed) +
+  #geom_point(aes(shape = Habitat_type), size = 3) +
+  scale_shape_manual(values=c(18,17))+
+  guides(
+    colour = guide_legend(override.aes = list(shape = c(18,17))),
+    shape = "none"
+  ) +
   geom_boxplot() + 
-  scale_fill_manual(values = c("grey75", "firebrick4"))+
+  scale_fill_manual(values = c("grey75", "darkorange2"))+
   geom_jitter()+
-  scale_colour_manual(values =c("grey75", "firebrick4"))+
+  scale_colour_manual(values =c("grey75", "darkorange2"))+
   theme_326 + # add the pre-defined theme
   labs(y = "Proportion Littorina Removed") + # labels
   theme(legend.position = "none")
