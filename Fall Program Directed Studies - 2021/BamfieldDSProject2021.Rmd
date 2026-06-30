@@ -235,6 +235,40 @@ exposure <- ggplot(exposed_scatter, aes(x=survey, y=mean_total, color=treatment,
 #plot and re-name legend to fit aesthetics
 exposure + scale_fill_discrete(name = "Treatment",
                               labels=c("Control", "Mass mortality", "Cleared")) 
+
+#June 2026 updates - colours, shapes, lines, dates?
+exposure <- ggplot(exposed_scatter, aes(x=survey, y=mean_total, color=treatment,color_palette(virdis))) +
+  geom_point(aes(shape = treatment), size = 3, position = position_dodge(width = 0.15)) +
+  scale_shape_manual(values=c(18,17,15))+
+  guides(
+    colour = guide_legend(override.aes = list(shape = c(18,17,15))),
+    shape = "none"
+  ) +
+  xlab("Week surveyed") +  
+  ylab("Total snails (avg ± SE)") +
+  theme_bw() + 
+  #geom_line(aes(group = treatment), position = position_dodge(width = 0.15))+
+  geom_linerange(aes(ymin = mean_total - SE, ymax = mean_total + SE), position = position_dodge(width =                  0.15)) + 
+  facet_grid(. ~ wave_exposure) + 
+  theme(strip.text.x = element_text (size = 18),
+        axis.title.x = element_text(size = 16),
+  axis.text.x = element_text(size = 14),
+  axis.title.y = element_text(size = 16))+
+  scale_x_discrete(name ="Week surveyed",
+                   #name = "Date surveyed",
+                   #limits=c("October 24", "October", "Novemeber"))+
+                   limits=c("0","2","4"))+
+  scale_colour_manual(values=c('grey75', 'chocolate4', "darkorange2"),
+                        name="Treatment",
+                        breaks=c("Control", "Mass_Mortality", "Cleared"),
+                        labels=c("Control", "Mass Mortality", "Cleared")) 
+
+#plot and re-name legend to fit aesthetics
+exposure + scale_fill_discrete(name = "Treatment",
+                              labels=c("Control", "Mass mortality", "Cleared")) 
+#shapes cover error bars...
+#if do date surveyed we will have to split it by facet and in general it seems a bit clunky...
+#ggsave("Figures/NoLines.png", device = "png", height = 9, width = 12, dpi = 400)
 ```
 
 
