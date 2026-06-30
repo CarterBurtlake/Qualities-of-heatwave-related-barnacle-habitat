@@ -247,7 +247,7 @@ exposure <- ggplot(exposed_scatter, aes(x=survey, y=mean_total, color=treatment,
   xlab("Week surveyed") +  
   ylab("Total snails (avg ± SE)") +
   theme_bw() + 
-  #geom_line(aes(group = treatment), position = position_dodge(width = 0.15))+
+  geom_line(aes(group = treatment), position = position_dodge(width = 0.15))+
   geom_linerange(aes(ymin = mean_total - SE, ymax = mean_total + SE), position = position_dodge(width =                  0.15)) + 
   facet_grid(. ~ wave_exposure) + 
   theme(strip.text.x = element_text (size = 18),
@@ -268,7 +268,7 @@ exposure + scale_fill_discrete(name = "Treatment",
                               labels=c("Control", "Mass mortality", "Cleared")) 
 #shapes cover error bars...
 #if do date surveyed we will have to split it by facet and in general it seems a bit clunky...
-#ggsave("Figures/NoLines.png", device = "png", height = 9, width = 12, dpi = 400)
+#ggsave("Figures/Lines.png", device = "png", height = 9, width = 12, dpi = 400)
 ```
 
 
